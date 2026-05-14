@@ -1,0 +1,53 @@
+[server]
+enableStaticServing = true
+
+[theme]
+primaryColor = "#1476ff"
+backgroundColor = "#F7F9FC"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+borderColor = "#E7E7E8"
+showWidgetBroder = false
+baseRadius = "full"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+headingFont = "Poppins"
+showSidebarBorder = true
+
+[theme.sidebar]
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+
+
+[[theme.fontFaces]]
+url = "app/static/Poppins/Poppins-Regular.ttf"
+family = "Poppins"
+weight = 400
+
+[[theme.fontFaces]]
+url = "app/static/Poppins/Poppins-Medium.ttf"
+family = "Poppins"
+weight = 500
+
+[[theme.fontFaces]]
+url = "app/static/Poppins/Poppins-SemiBold.ttf"
+family = "Poppins"
+weight = 600
+
+[[theme.fontFaces]]
+url = "app/static/Poppins/Poppins-Bold.ttf"
+family = "Poppins"
+weight = 700
+
+[[theme.fontFaces]]
+url = "app/static/Poppins/Poppins-ExtraBold.ttf"
+family = "Poppins"
+weight = 800
+
+[[theme.fontFaces]]
+url = "app/static/Poppins/Poppins-Black.ttf"
+family = "Poppins"
+weight = 900
+
+[ui]
+hideTopBar = true

@@ -1,0 +1,18 @@
+TECNOLOGIAS = [
+    'SELADA (VRLA)',
+    'VENTILADA',
+    'RESINADA',
+    'LITIO',
+    'EM COFRE',
+    'NÃO SE APLICA'
+]
+
+FABRICANTES = [
+    'NEWMAX',
+    'ENERSYS',
+    'ZTE'
+]
+
+TENSOES = ['2V', '12V', '48V']
+
+TRAFEGO_DADOS_MEDIO_MOVEL = 7.6
