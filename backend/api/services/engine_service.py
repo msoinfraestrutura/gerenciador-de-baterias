@@ -257,7 +257,7 @@ def run_feature_engineering() -> None:
         raise Exception(f'Falha ao persistir tabelas no banco de dados: {e}')
 
 
-def get_tipo_bateria(pontuacao_hierarquia: float) -> str:
+def get_bateria(pontuacao_hierarquia: float) -> str:
     '''
     Retorna o tipo de bateria com base na hierarquia.
 
@@ -291,9 +291,9 @@ def run_training_data(config: dict = None) -> list:
     #default
     config = config or {}
     baterias = config.get('baterias', {
-        'SELADA (VRLA) 12V': {'tipo_bateria': 'SELADA (VRLA)', 'tensao': 12, 'capacidade': 200, 'custo':  8575.12},
-        'VENTILADA 2V': {'tipo_bateria': 'VENTILADA', 'tensao': 2, 'capacidade': 2000, 'custo': 141319.33},
-        'LITIO 48V': {'tipo_bateria': 'LITIO', 'tensao': 48, 'capacidade': 100, 'custo':  8383.20},
+        'SELADA (VRLA) 12V': {'tecnologia': 'SELADA (VRLA)', 'tensao': 12, 'capacidade': 200, 'custo':  8575.12},
+        'VENTILADA 2V': {'tecnologia': 'VENTILADA', 'tensao': 2, 'capacidade': 2000, 'custo': 141319.33},
+        'LITIO 48V': {'tecnologia': 'LITIO', 'tensao': 48, 'capacidade': 100, 'custo':  8383.20},
     })
     investimento = config.get('investimento', 1000000) #capex de 2026: 93.634.178,16
 
@@ -309,8 +309,8 @@ def run_training_data(config: dict = None) -> list:
         df = df_features[df_features['pontuacao'] >= q75].copy() #apenas o terceiro quartil
 
         #dados da bateria
-        df['bateria'] = df['pontuacao_hierarquia'].apply(get_tipo_bateria)
-        df['tipo_bateria'] = df['bateria'].apply(lambda x: baterias[x]['tipo_bateria'])
+        df['bateria'] = df['pontuacao_hierarquia'].apply(get_bateria)
+        df['tecnologia'] = df['bateria'].apply(lambda x: baterias[x]['tecnologia'])
         df['tensao'] = df['bateria'].apply(lambda x: baterias[x]['tensao'])
         df['capacidade'] = df['bateria'].apply(lambda x: baterias[x]['capacidade'])
         df['custo'] = df['bateria'].apply(lambda x: baterias[x]['custo'])

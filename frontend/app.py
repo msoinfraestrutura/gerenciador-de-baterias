@@ -1,8 +1,8 @@
 import streamlit as st
 
+from pages import visao_gerencial
 from pages import (
     login,
-    executivo,
     gerenciador_de_baterias,
     otimizador_de_baterias,
     motor_de_alocacoes,
@@ -66,7 +66,7 @@ with st.sidebar:
 
 menu_items = {
     '📊 Visões': [
-        st.Page(executivo.show, title='Executivo', url_path='executivo'),
+        st.Page(visao_gerencial.show, title='Executivo', url_path='executivo'),
     ],
     '⚙️ Operacional': [
         st.Page(otimizador_de_baterias.show, title='Otimizador', url_path='otimizador'),

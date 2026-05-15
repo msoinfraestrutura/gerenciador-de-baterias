@@ -12,10 +12,10 @@ class Features(db.Model):
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     estacao = db.Column(db.String(255), nullable=False)
+    autonomia_projetada = db.Column(db.Numeric(10, 2), nullable=True)
     carga = db.Column(db.Numeric(15, 2), nullable=True)
     pontuacao_hierarquia = db.Column(db.Numeric(10, 2), nullable=True)
     pontuacao = db.Column(db.Numeric(10, 2), nullable=True)
-    autonomia_projetada = db.Column(db.Numeric(10, 2), nullable=True)
     updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     def __repr__(self):

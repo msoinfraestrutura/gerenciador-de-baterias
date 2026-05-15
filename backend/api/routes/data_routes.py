@@ -68,7 +68,7 @@ def estacoes():
             examples:
                 application/json:
                     - id: 1
-                      estacao: 'ETD-SP-01'
+                      estacao: 'ACABL01'
                       ibge: '3550308'
                       uf: 'SP'
                       municipio: 'São Paulo'
@@ -132,6 +132,8 @@ def autonomia_restabelecimento():
                     properties:
                         id:
                             type: integer
+                        ano:
+                            type: string
                         estacao:
                             type: string
                         autonomia_media_horas:
@@ -145,6 +147,15 @@ def autonomia_restabelecimento():
                         updated_at:
                             type: string
                             format: date-time
+            examples:
+                application/json:
+                    - id: 1
+                      ano: '2026'
+                      estacao: 'ACABL01'
+                      autonomia_media_horas: 2.75
+                      restabelecimento_medio_horas: 2.75
+                      tipo_autonomia: 'Real'
+                      updated_at: '2025-12-19T16:05:41.123456'
         401:
             description: Erro de autenticação JWT.
             schema:
@@ -382,7 +393,7 @@ def indisponibilidades():
             examples:
                 application/json:
                     - id: 20
-                      estacao: 'ETD-SP-01'
+                      estacao: 'ACABL01'
                       submit_date: '2025-12-18T08:30:00'
                       clear_date: '2025-12-18T11:15:00'
                       indisponibilidade_horas: 2.7500
@@ -476,7 +487,7 @@ def pontuacoes():
             examples:
                 application/json:
                     - id: 3
-                      estacao: 'ETD-SP-01'
+                      estacao: 'ACABL01'
                       pontuacao_autonomia: 8.50
                       pontuacao_trafego_dados: 9.20
                       pontuacao_hierarquia: 9.80
@@ -544,13 +555,10 @@ def features():
                             type: integer
                         estacao:
                             type: string
-                        capacidade_baterias:
+                        autonomia_projetada:
                             type: number
                             format: float
                         carga:
-                            type: number
-                            format: float
-                        indisponibilidade_media_horas:
                             type: number
                             format: float
                         pontuacao_hierarquia:
@@ -565,10 +573,9 @@ def features():
             examples:
                 application/json:
                     - id: 10
-                      estacao: 'ETD-SP-01'
-                      capacidade_baterias: 120.50
+                      estacao: 'ACABL01'
+                      autonomia_projetada: 2.75
                       carga: 80.25
-                      indisponibilidade_media_horas: 1.7500
                       pontuacao_hierarquia: 9.50
                       pontuacao: 87.30
                       updated_at: '2025-12-19T15:30:22.123456'
@@ -629,15 +636,24 @@ def alocacoes():
                             type: integer
                         estacao:
                             type: string
-                        rodada_alocacao:
-                            type: integer
-                        ganho:
+                        autonomia_projetada:
                             type: number
                             format: float
+                        rodada_alocacao:
+                            type: integer
+                        tecnologia:
+                            type: string
+                        tensao:
+                            type: integer
+                        capacidade:
+                            type: integer
                         custo:
                             type: number
                             format: float
-                        ganho_por_milhao_investido:
+                        ganho:
+                            type: number
+                            format: float
+                        ganho_por_custo:
                             type: number
                             format: float
                         investimento_restante:
@@ -646,10 +662,13 @@ def alocacoes():
                         indisponibilidade_restante:
                             type: number
                             format: float
+                        custo_acumulado:
+                            type: number
+                            format: float
                         ganho_acumulado:
                             type: number
                             format: float
-                        custo_acumulado:
+                        ganho_por_milhao_investido:
                             type: number
                             format: float
                         created_at:
@@ -658,14 +677,19 @@ def alocacoes():
             examples:
                 application/json:
                     - id: 15
-                      estacao: 'ETD-SP-01'
+                      estacao: 'ACACL01'
+                      autonomia_projetada: 2.75
                       rodada_alocacao: 3
-                      ganho: 12500.50
+                      tecnologia: 'VENTILADA'
+                      tensao: 12
+                      capacidade: 100
                       custo: 4300.00
+                      ganho: 12500.50
+                      ganho_por_custo: 10.50
                       investimento_restante: 18500.00
                       indisponibilidade_restante: 4.75
-                      ganho_acumulado: 35800.75
                       custo_acumulado: 12900.00
+                      ganho_acumulado: 35800.75
                       created_at: '2025-12-19T17:10:33.456789'
                       ganho_por_milhao_investido: 2.91
         401:
@@ -772,7 +796,7 @@ def disponibilidade():
                 application/json:
                     - id: 10
                       ano: '2025'
-                      estacao: 'ETD-SP-01'
+                      estacao: 'ACABL01'
                       disponibilidade: 99.35
                       disponibilidade_parcial: 99.60
                       disponibilidade_energia: 98.90

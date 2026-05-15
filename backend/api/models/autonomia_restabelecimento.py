@@ -10,6 +10,7 @@ class AutonomiaRestabelecimento(db.Model):
     __tablename__ = 'tb_autonomia_restabelecimento'
     
     id = db.Column(db.Integer, primary_key=True)
+    ano = db.Column(db.String(4), nullable=True, index=True)
     estacao = db.Column(db.String(255), nullable=False, index=True)
     autonomia_media_horas = db.Column(db.Numeric(10, 2), nullable=True)
     restabelecimento_medio_horas = db.Column(db.Numeric(10, 2), nullable=True)

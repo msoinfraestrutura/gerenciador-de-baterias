@@ -1,6 +1,6 @@
 import logging
 import warnings
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Optional, Any
 import pandas as pd
 import numpy as np
@@ -120,92 +120,136 @@ def transform_alarmes(df_alarmes: pd.DataFrame, ano: int=False) -> pd.DataFrame:
 
 
 def run_autonomia_restabelecimento() -> None:
-    ano = False
+
+    ano_inicial = 2023
+    ano_atual = datetime.now().year
 
     df_estacoes = pd.read_pickle('data/raw/estacoes.pkl')
     df_indisponibilidades = pd.read_pickle('data/raw/indisponibilidade.pkl')
     df_alarmes = pd.read_pickle('data/raw/alarmes.pkl')
 
-    df_indisponibilidades = transform_indisponibilidade(df_indisponibilidades, ano)
-    df_alarmes = transform_alarmes(df_alarmes, ano)
-    
-    df_grouped_indisponibilidades = df_indisponibilidades.groupby(['estacao', 'date'], as_index=False).agg(
-        submit_date_indisp=('submit_date', 'min'),
-        clear_date_indisp=('clear_date', 'max')
-    )
-    df_grouped_alarmes = df_alarmes.groupby(['estacao', 'date'], as_index=False).agg(
-        submit_date_alarme=('submit_date', 'min'), 
-        clear_date_alarme=('clear_date', 'max')
-    )
+    dfs_autonomia_restabelecimento = []
+    dfs_indisponibilidades = []
 
-    df_grouped_alarmes = df_grouped_alarmes.sort_values('submit_date_alarme')
-    df_grouped_indisponibilidades = df_grouped_indisponibilidades.sort_values('submit_date_indisp')
+    for ano in range(ano_inicial, ano_atual + 1):
 
-    #buscando estações com autonomia
-    temp_df_1 = pd.merge_asof(
-        df_grouped_alarmes, 
-        df_grouped_indisponibilidades, 
-        left_on='submit_date_alarme', 
-        right_on='submit_date_indisp',
-        by='estacao', 
-        tolerance=pd.Timedelta(hours=24),
-        direction='forward'
-    )
+        df_indisponibilidades_temp = df_indisponibilidades.copy()
+        df_alarmes_temp = df_alarmes.copy()
 
-    df_com_impacto = temp_df_1[temp_df_1['submit_date_indisp'].notnull()]
-    df_com_impacto = df_com_impacto.assign(autonomia=df_com_impacto['submit_date_indisp'] - df_com_impacto['submit_date_alarme'])
-    df_com_impacto = df_com_impacto.groupby('estacao', as_index=False).agg(autonomia_media=('autonomia', 'mean'))
-    df_com_impacto['tipo_autonomia'] = 'Real' 
+        df_indisponibilidades_temp['submit_date'] = pd.to_datetime(df_indisponibilidades_temp['submit_date'])
+        df_alarmes_temp['submit_date'] = pd.to_datetime(df_alarmes_temp['submit_date'])
 
-    df_sem_impacto = temp_df_1[temp_df_1['submit_date_indisp'].isnull()]
-    df_sem_impacto = df_sem_impacto.assign(autonomia=df_sem_impacto['clear_date_alarme'] - df_sem_impacto['submit_date_alarme'])
-    df_sem_impacto = df_sem_impacto.groupby('estacao', as_index=False).agg(autonomia_media=('autonomia', 'mean'))
-    df_sem_impacto['tipo_autonomia'] = 'Estimada' 
+        df_indisponibilidades_temp = df_indisponibilidades_temp[df_indisponibilidades_temp['submit_date'].dt.year <= ano]
+        df_alarmes_temp = df_alarmes_temp[df_alarmes_temp['submit_date'].dt.year <= ano]
 
-    #buscando estações sem autonomia
-    temp_df_2 = pd.merge_asof(
-        df_grouped_indisponibilidades, 
-        df_grouped_alarmes, 
-        left_on='submit_date_indisp', 
-        right_on='submit_date_alarme',
-        by='estacao',
-        tolerance=pd.Timedelta(hours=24),
-        direction='backward'
-    )
+        df_indisponibilidades_temp = transform_indisponibilidade(df_indisponibilidades_temp, False)
+        df_alarmes_temp = transform_alarmes(df_alarmes_temp, False)
+        
+        df_grouped_indisponibilidades = df_indisponibilidades_temp.groupby(['estacao', 'date'], as_index=False).agg(
+            submit_date_indisp=('submit_date', 'min'),
+            clear_date_indisp=('clear_date', 'max')
+        )
 
-    df_indisponibilidades_sem_autonomia = temp_df_2[temp_df_2['submit_date_alarme'].isnull()].copy()
-    df_indisponibilidades_sem_autonomia['tempo_restabelecimento_energia'] = df_indisponibilidades_sem_autonomia['clear_date_indisp'] - df_indisponibilidades_sem_autonomia['submit_date_indisp']
-    lista_estacoes_sem_autonomia = set(df_indisponibilidades_sem_autonomia['estacao'].unique()) - set(df_com_impacto['estacao'].unique()) - set(df_sem_impacto['estacao'].unique())
-    
-    df_sem_autonomia = pd.DataFrame(lista_estacoes_sem_autonomia, columns=['estacao'])
-    df_sem_autonomia['autonomia_media'] = timedelta(0)
-    df_sem_autonomia['tipo_autonomia'] = 'Sem autonomia' 
+        df_grouped_alarmes = df_alarmes_temp.groupby(['estacao', 'date'], as_index=False).agg(
+            submit_date_alarme=('submit_date', 'min'), 
+            clear_date_alarme=('clear_date', 'max')
+        )
 
-    df_restabelecimento_energia = pd.concat([
-        df_alarmes[['estacao', 'tempo_restabelecimento_energia']], 
-        df_indisponibilidades_sem_autonomia[['estacao', 'tempo_restabelecimento_energia']]
-    ]).groupby('estacao', as_index=False).agg(tempo_restabelecimento_medio=('tempo_restabelecimento_energia', 'mean'))
+        df_grouped_alarmes = df_grouped_alarmes.sort_values('submit_date_alarme')
+        df_grouped_indisponibilidades = df_grouped_indisponibilidades.sort_values('submit_date_indisp')
 
-    df_sem_impacto = df_sem_impacto[~df_sem_impacto['estacao'].isin(df_com_impacto['estacao'].unique())]
-    df_autonomia_restabelecimento = pd.concat([df_com_impacto, df_sem_impacto, df_sem_autonomia])
+        temp_df_1 = pd.merge_asof(
+            df_grouped_alarmes, 
+            df_grouped_indisponibilidades, 
+            left_on='submit_date_alarme', 
+            right_on='submit_date_indisp',
+            by='estacao', 
+            tolerance=pd.Timedelta(hours=24),
+            direction='forward'
+        )
 
-    df_autonomia_restabelecimento = df_estacoes[['estacao']].merge(df_autonomia_restabelecimento, how='left', on='estacao')
-    df_autonomia_restabelecimento = df_autonomia_restabelecimento.merge(df_restabelecimento_energia, on='estacao', how='left')
-    df_autonomia_restabelecimento['autonomia_media_horas'] = df_autonomia_restabelecimento['autonomia_media'].apply(get_horas)
-    df_autonomia_restabelecimento['restabelecimento_medio_horas'] = df_autonomia_restabelecimento['tempo_restabelecimento_medio'].apply(get_horas)
-    df_autonomia_restabelecimento = df_autonomia_restabelecimento[['estacao', 'autonomia_media_horas', 'restabelecimento_medio_horas', 'tipo_autonomia']]
+        df_com_impacto = temp_df_1[temp_df_1['submit_date_indisp'].notnull()]
+        df_com_impacto = df_com_impacto.assign(
+            autonomia=df_com_impacto['submit_date_indisp'] - df_com_impacto['submit_date_alarme']
+        )
+        df_com_impacto = df_com_impacto.groupby('estacao', as_index=False).agg(
+            autonomia_media=('autonomia', 'mean')
+        )
+        df_com_impacto['tipo_autonomia'] = 'Real'
 
-    df_indisponibilidades['tempo_indisponibilidade'] = df_indisponibilidades.apply(get_duracao_indisponibilidade, axis=1)
-    df_indisponibilidades['indisponibilidade_horas'] = df_indisponibilidades['tempo_indisponibilidade'].apply(get_horas)
-    df_indisponibilidades = df_indisponibilidades[df_indisponibilidades['estacao'].notnull()]
-    
-    if ano:
-        df_autonomia_restabelecimento.to_pickle(f'data/aggregated/autonomia_restabelecimento_{ano}.pkl')
-        df_indisponibilidades.to_pickle(f'data/aggregated/indisponibilidades_{ano}.pkl')
-    else:
-        df_autonomia_restabelecimento.to_pickle('data/aggregated/autonomia_restabelecimento.pkl')
-        df_indisponibilidades.to_pickle('data/aggregated/indisponibilidades.pkl')
-    
+        df_sem_impacto = temp_df_1[temp_df_1['submit_date_indisp'].isnull()]
+        df_sem_impacto = df_sem_impacto.assign(
+            autonomia=df_sem_impacto['clear_date_alarme'] - df_sem_impacto['submit_date_alarme']
+        )
+        df_sem_impacto = df_sem_impacto.groupby('estacao', as_index=False).agg(
+            autonomia_media=('autonomia', 'mean')
+        )
+        df_sem_impacto['tipo_autonomia'] = 'Estimada'
+
+        temp_df_2 = pd.merge_asof(
+            df_grouped_indisponibilidades, 
+            df_grouped_alarmes, 
+            left_on='submit_date_indisp', 
+            right_on='submit_date_alarme',
+            by='estacao',
+            tolerance=pd.Timedelta(hours=24),
+            direction='backward'
+        )
+
+        df_indisponibilidades_temp_sem_autonomia = temp_df_2[temp_df_2['submit_date_alarme'].isnull()].copy()
+        df_indisponibilidades_temp_sem_autonomia['tempo_restabelecimento_energia'] = (
+            df_indisponibilidades_temp_sem_autonomia['clear_date_indisp'] - df_indisponibilidades_temp_sem_autonomia['submit_date_indisp']
+        )
+
+        lista_estacoes_sem_autonomia = set(df_indisponibilidades_temp_sem_autonomia['estacao'].unique()) \
+            - set(df_com_impacto['estacao'].unique()) \
+            - set(df_sem_impacto['estacao'].unique())
+        
+        df_sem_autonomia = pd.DataFrame(lista_estacoes_sem_autonomia, columns=['estacao'])
+        df_sem_autonomia['autonomia_media'] = timedelta(0)
+        df_sem_autonomia['tipo_autonomia'] = 'Sem autonomia'
+
+        df_restabelecimento_energia = pd.concat([
+            df_alarmes_temp[['estacao', 'tempo_restabelecimento_energia']], 
+            df_indisponibilidades_temp_sem_autonomia[['estacao', 'tempo_restabelecimento_energia']]
+        ]).groupby('estacao', as_index=False).agg(
+            tempo_restabelecimento_medio=('tempo_restabelecimento_energia', 'mean')
+        )
+
+        df_sem_impacto = df_sem_impacto[
+            ~df_sem_impacto['estacao'].isin(df_com_impacto['estacao'].unique())
+        ]
+
+        df_autonomia_restabelecimento = pd.concat([df_com_impacto, df_sem_impacto, df_sem_autonomia])
+
+        df_autonomia_restabelecimento = df_estacoes[['estacao']].merge(
+            df_autonomia_restabelecimento, how='left', on='estacao'
+        )
+        df_autonomia_restabelecimento = df_autonomia_restabelecimento.merge(
+            df_restabelecimento_energia, on='estacao', how='left'
+        )
+
+        df_autonomia_restabelecimento['autonomia_media_horas'] = df_autonomia_restabelecimento['autonomia_media'].apply(get_horas)
+        df_autonomia_restabelecimento['restabelecimento_medio_horas'] = df_autonomia_restabelecimento['tempo_restabelecimento_medio'].apply(get_horas)
+        df_autonomia_restabelecimento['ano'] = ano
+        df_autonomia_restabelecimento = df_autonomia_restabelecimento[
+            ['ano', 'estacao', 'autonomia_media_horas', 'restabelecimento_medio_horas', 'tipo_autonomia']
+        ]
+        dfs_autonomia_restabelecimento.append(df_autonomia_restabelecimento)
+
+        if ano == ano_atual:
+            df_indisponibilidades_temp['tempo_indisponibilidade'] = df_indisponibilidades_temp.apply(get_duracao_indisponibilidade, axis=1)
+            df_indisponibilidades_temp['indisponibilidade_horas'] = df_indisponibilidades_temp['tempo_indisponibilidade'].apply(get_horas)
+            dfs_indisponibilidades.append(df_indisponibilidades_temp)
+        else:
+            pass
+
+    df_autonomia_restabelecimento = pd.concat(dfs_autonomia_restabelecimento, ignore_index=True)
+    df_indisponibilidades = pd.concat(dfs_indisponibilidades, ignore_index=True)
+
+    df_autonomia_restabelecimento.to_pickle('data/aggregated/autonomia_restabelecimento.pkl')
+    df_indisponibilidades.to_pickle('data/aggregated/indisponibilidades.pkl')
+
     return df_autonomia_restabelecimento, df_indisponibilidades
 
 

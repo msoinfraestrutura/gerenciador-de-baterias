@@ -1,5 +1,6 @@
 import logging
 from typing import Optional
+from datetime import datetime
 import pandas as pd
 
 
@@ -38,10 +39,12 @@ def run_pontuacao_autonomia() -> None:
     '''
     df = pd.read_pickle('data/aggregated/autonomia_restabelecimento.pkl')
     
+    df = df[df['ano'] == datetime.now().year]
+
     df['pontuacao_autonomia'] = df.apply(get_pontuacao_autonomia, axis=1)
     df['pontuacao_autonomia'] = df['pontuacao_autonomia'].fillna(1)
     
-    df = df[['estacao', 'pontuacao_autonomia']]
+    df = df[['estacao', 'restabelecimento_medio_horas', 'pontuacao_autonomia']]
     
     df.to_pickle('data/aggregated/pontuacao_autonomia.pkl')
     

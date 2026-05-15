@@ -225,9 +225,8 @@ def get_features():
             {
                 'id': r.id,
                 'estacao': r.estacao,
-                'capacidade_baterias': float(r.capacidade_baterias) if r.capacidade_baterias is not None else None,
+                'autonomia_projetada': float(r.autonomia_projetada) if r.autonomia_projetada is not None else None,
                 'carga': float(r.carga) if r.carga is not None else None,
-                'indisponibilidade_media_horas': float(r.indisponibilidade_media_horas) if r.indisponibilidade_media_horas is not None else None,
                 'pontuacao_hierarquia': float(r.pontuacao_hierarquia) if r.pontuacao_hierarquia is not None else None,
                 'pontuacao': float(r.pontuacao) if r.pontuacao is not None else None,
                 'updated_at': r.updated_at.isoformat() if r.updated_at else None

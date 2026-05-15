@@ -52,19 +52,19 @@ def show() -> None:
         'investimento': investimento,
         'baterias': {
             'SELADA (VRLA) 12V': {
-                'tipo_bateria': 'SELADA (VRLA)',
+                'tecnologia': 'SELADA (VRLA)',
                 'tensao': 12,
                 'capacidade': selada_vrla_capacidade,
                 'custo': selada_vrla_custo
             },
             'VENTILADA 2V': {
-                'tipo_bateria': 'VENTILADA',
+                'tecnologia': 'VENTILADA',
                 'tensao': 2,
                 'capacidade': ventilada_capacidade,
                 'custo': ventilada_custo
             },
             'LITIO 48V': {
-                'tipo_bateria': 'LITIO',
+                'tecnologia': 'LITIO',
                 'tensao': 48,
                 'capacidade': litio_capacidade,
                 'custo': litio_custo
@@ -99,7 +99,7 @@ def show() -> None:
     with col1:
         st.subheader('① Extração de Dados')
         if st.button('Executar', key='btn_ext', width='stretch'):
-            with st.spinner('Extraindo...'):
+            with st.spinner('Extraindo extração de dados...'):
                 try:
                     res = run_load_data()
                     st.success('Extração de dados concluída')
@@ -109,7 +109,7 @@ def show() -> None:
     with col2:
         st.subheader('② Engenharia de Features')
         if st.button('Executar', key='btn_feat', width='stretch'):
-            with st.spinner('Transformando...'):
+            with st.spinner('Executando engenharia de features...'):
                 try:
                     res = run_feature_engineering()
                     st.success('Feature engineering concluído')
@@ -119,7 +119,7 @@ def show() -> None:
     with col3:
         st.subheader('③ Motor de Alocações')
         if st.button('Executar', key='btn_opt', width='stretch'):
-            with st.spinner('Otimizando...'):
+            with st.spinner('Executando motor de alocações...'):
                 try:
                     res = run_training_data(config=payload)
                     st.success('Alocações concluídas')

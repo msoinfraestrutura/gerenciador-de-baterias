@@ -1,9 +1,11 @@
+from typing import List
 import streamlit as st
 import pandas as pd
 from services.data_service import executivo
-from charts.executivo import create_line_chart
+from charts.visao_gerencial import create_line_chart
 from utils.helpers import format_number
 from . import TRAFEGO_DADOS_MEDIO_MOVEL
+
 
 def show() -> None:
     st.image('img/logo.svg', width=75)

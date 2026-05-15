@@ -1,8 +1,8 @@
 """schema inicial
 
-Revision ID: 441d31e978c4
+Revision ID: 93fa24d672da
 Revises: 
-Create Date: 2026-05-14 10:38:42.898035
+Create Date: 2026-05-15 16:03:47.097430
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '441d31e978c4'
+revision = '93fa24d672da'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -21,17 +21,18 @@ def upgrade():
     op.create_table('tb_alocacoes',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('estacao', sa.String(length=255), nullable=True),
+    sa.Column('autonomia_projetada', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('rodada_alocacao', sa.Integer(), nullable=True),
     sa.Column('tecnologia', sa.String(length=50), nullable=True),
-    sa.Column('tensao', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('capacidade', sa.Numeric(precision=10, scale=2), nullable=True),
+    sa.Column('tensao', sa.Integer(), nullable=True),
+    sa.Column('capacidade', sa.Integer(), nullable=True),
     sa.Column('custo', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('ganho', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('ganho_por_custo', sa.Numeric(precision=10, scale=4), nullable=True),
     sa.Column('investimento_restante', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('indisponibilidade_restante', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('ganho_acumulado', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('custo_acumulado', sa.Numeric(precision=15, scale=2), nullable=True),
+    sa.Column('ganho_acumulado', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('ganho_por_milhao_investido', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('id')
@@ -53,6 +54,7 @@ def upgrade():
 
     op.create_table('tb_autonomia_restabelecimento',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('ano', sa.String(length=4), nullable=True),
     sa.Column('estacao', sa.String(length=255), nullable=False),
     sa.Column('autonomia_media_horas', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('restabelecimento_medio_horas', sa.Numeric(precision=10, scale=2), nullable=True),
@@ -61,6 +63,7 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('tb_autonomia_restabelecimento', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_tb_autonomia_restabelecimento_ano'), ['ano'], unique=False)
         batch_op.create_index(batch_op.f('ix_tb_autonomia_restabelecimento_estacao'), ['estacao'], unique=False)
 
     op.create_table('tb_baterias',
@@ -118,10 +121,10 @@ def upgrade():
     op.create_table('tb_features',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('estacao', sa.String(length=255), nullable=False),
+    sa.Column('autonomia_projetada', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('carga', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('pontuacao_hierarquia', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('pontuacao', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('autonomia_projetada', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
@@ -216,6 +219,7 @@ def downgrade():
     op.drop_table('tb_baterias')
     with op.batch_alter_table('tb_autonomia_restabelecimento', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_tb_autonomia_restabelecimento_estacao'))
+        batch_op.drop_index(batch_op.f('ix_tb_autonomia_restabelecimento_ano'))
 
     op.drop_table('tb_autonomia_restabelecimento')
     with op.batch_alter_table('tb_autonomia_inventario', schema=None) as batch_op:

@@ -30,6 +30,32 @@ def get_pontuacao(row: pd.Series) -> float:
     )
 
 
+def get_autonomia_projetada(row: pd.Series) -> float:
+    '''
+    Calcula a autonomia projetada da estação com base na sua
+    pontuação de hierarquia, ajustando o valor de acordo com
+    o tempo médio de restabelecimento.
+
+    Args:
+        row (pd.Series): Linha do DataFrame contendo os campos
+        'pontuacao_hierarquia' e 'restabelecimento_medio_horas'.
+
+    Returns:
+        float: Valor da autonomia projetada para a estação.
+    '''
+    pontuacao_hierarquia = row['pontuacao_hierarquia']
+    restabelecimento_medio_horas = row['restabelecimento_medio_horas']
+
+    if pontuacao_hierarquia >= 80:
+        autonomia_projetada = 6
+    else:
+        autonomia_projetada = 4
+
+    autonomia_projetada = min(autonomia_projetada, restabelecimento_medio_horas)
+
+    return autonomia_projetada
+
+
 def run_features() -> tuple[pd.DataFrame, pd.DataFrame]:
     '''
     Executa o pipeline de consolidação de scores e geração de features
@@ -48,14 +74,12 @@ def run_features() -> tuple[pd.DataFrame, pd.DataFrame]:
     df_pontuacao_idade_bateria = pd.read_pickle(f'data/aggregated/pontuacao_idade_bateria.pkl')
     df_pontuacao_cliente = pd.read_pickle(f'data/aggregated/pontuacao_cliente.pkl')
     df_fontes = pd.read_pickle(f'data/aggregated/fontes.pkl')
-    #df_autonomia_projetada = pd.read_pickle(f'data/aggregated/autonomia_projetada.pkl')
 
     df = df_pontuacao_hierarquia.merge(df_pontuacao_idade_bateria, on='estacao', how='left')
     df = df.merge(df_pontuacao_tmr, on='estacao', how='left')
     df = df.merge(df_pontuacao_cliente, on='estacao', how='left')
     df = df.merge(df_pontuacao_trafego_faturamento, on='estacao', how='left')
     df = df.merge(df_pontuacao_autonomia, on='estacao', how='left')
-    #df = df.merge(df_autonomia_projetada, on='estacao', how='left')
 
     fill_values: dict[str, Any] = {
         'pontuacao_tmr': 1, 
@@ -65,31 +89,34 @@ def run_features() -> tuple[pd.DataFrame, pd.DataFrame]:
         'pontuacao_trafego_dados': 3,
         'pontuacao_faturamento': 3, 
         'pontuacao_autonomia': 1, 
-        'autonomia_projetada': 4
+        'restabelecimento_medio_horas': 4,
     }
     df = df.fillna(value=fill_values)
+
     df['pontuacao'] = df.apply(get_pontuacao, axis=1)
 
     df_pontuacoes = df.groupby('estacao', as_index=False).agg({
         'pontuacao_autonomia': 'first', 'pontuacao_trafego_dados': 'first',
         'pontuacao_hierarquia': 'first', 'pontuacao_tmr': 'first',
-        'pontuacao_idade_bateria': 'max', 'pontuacao_faturamento': 'first',
-        'pontuacao_cliente': 'first', 'pontuacao': 'max'
+        'pontuacao_idade_bateria': 'first', 'pontuacao_faturamento': 'first',
+        'pontuacao_cliente': 'first', 'pontuacao': 'first'
     })
     df_pontuacoes.to_pickle(f'data/aggregated/pontuacoes.pkl')
 
     df_features = df.merge(df_fontes, on='estacao', how='left')
     df_features['capacidade'] = df_features['capacidade'].astype(float)
 
+    #obtendo autonomia projetada
+    df_features['autonomia_projetada'] = df_features.apply(get_autonomia_projetada, axis=1)
+
     df_features = df_features.groupby('estacao', as_index=False).agg(
+        autonomia_projetada=('autonomia_projetada', 'first'),
         carga=('carga', 'first'),
         pontuacao_hierarquia=('pontuacao_hierarquia', 'first'),
-        pontuacao=('pontuacao', 'first'),
-        autonomia_projetada=('autonomia_projetada', 'first'),
+        pontuacao=('pontuacao', 'first')
     )
     df_features['carga'] = df_features['carga'].fillna(df_features['carga'].median())
     df_features['carga'] = df_features['carga'].replace(0, df_features['carga'].median())
-    df_features = df_features[df_features['autonomia_projetada'] > 0]
     
     df_features.to_pickle(f'data/aggregated/features.pkl')
 

@@ -18,20 +18,20 @@ class Estacao:
     def __init__(
         self,
         nome_estacao: str,
+        autonomia_projetada_estacao: int,
         carga_estacao: float,
         pontuacao_estacao: float,
-        autonomia_projetada_estacao: int,
-        tipo_bateria: str,
+        tecnologia_bateria: str,
         tensao_bateria:int,
         capacidade_bateria: int,
         custo_bateria: float,
         df_indisponibilidades: pd.DataFrame
     ):
         self.nome_estacao = nome_estacao
+        self.autonomia_projetada_estacao = autonomia_projetada_estacao
         self.carga_estacao = carga_estacao
         self.pontuacao_estacao = pontuacao_estacao
-        self.autonomia_projetada_estacao = autonomia_projetada_estacao
-        self.tipo_bateria = tipo_bateria
+        self.tecnologia_bateria = tecnologia_bateria
         self.tensao_bateria = tensao_bateria
         self.capacidade_bateria = capacidade_bateria
         self.custo_bateria = custo_bateria
@@ -128,7 +128,7 @@ def run_alocacoes(
         for estacao in estacoes:
             if (
                 estacao.get_indisponibilidade_total_restante() > 0
-                and ganhos_acumulados[estacao.nome_estacao]
+                and ganhos_acumulados[estacao.nome_estacao] 
                 < estacao.autonomia_projetada_estacao #=> retirando pois a trava não aproveita o investimento total disponível
             ):
                 ganho = estacao.get_ganho_marginal()
@@ -153,8 +153,9 @@ def run_alocacoes(
         alocacoes.append(
             {
                 'estacao': melhor_estacao.nome_estacao,
+                'autonomia_projetada': melhor_estacao.autonomia_projetada_estacao,
                 'rodada_alocacao': len(melhor_estacao.historico_alocacoes),
-                'tecnologia': melhor_estacao.tipo_bateria,
+                'tecnologia': melhor_estacao.tecnologia_bateria,
                 'tensao': melhor_estacao.tensao_bateria,
                 'capacidade': melhor_estacao.capacidade_bateria,
                 'custo': melhor_estacao.custo_bateria,
@@ -193,10 +194,10 @@ def run_allocation_engine(
 
         estacao = Estacao(
             nome_estacao=row['estacao'],
+            autonomia_projetada_estacao=row['autonomia_projetada'],
             carga_estacao=row['carga'],
             pontuacao_estacao=row['pontuacao'],
-            autonomia_projetada_estacao=row['autonomia_projetada'],
-            tipo_bateria=row['tipo_bateria'],
+            tecnologia_bateria=row['tecnologia'],
             tensao_bateria=row['tensao'],
             capacidade_bateria=row['capacidade'],
             custo_bateria=row['custo'],

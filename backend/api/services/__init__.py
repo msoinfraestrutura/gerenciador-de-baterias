@@ -34,7 +34,7 @@ MYSQL_SQL_QUERY_4 = '''
             WHEN COUNT(st.id) = 0 THEN 'SEM GERADOR'
             WHEN COUNT(st.id) = 1 THEN 'SINGELO'
             ELSE 'REDUNDANTE'
-        END AS tipo_gerador
+        END AS gerador
     FROM db_infra_am.tbl_site AS ts
     LEFT JOIN db_infra_am.tbl_gerador AS tg
         ON tg.id_site = ts.id
@@ -61,6 +61,8 @@ PG_SQL_QUERY_1 = '''
         te.finalidade_movel,
         te.finalidade_empresarial,
         te.finalidade_residencial,
+        te.anatel_rf,
+        te.anatel_nextel_rf,
         te.latitude,
         te.longitude
     FROM tb_estacoes te
