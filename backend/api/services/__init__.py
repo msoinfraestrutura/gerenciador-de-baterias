@@ -83,8 +83,7 @@ PG_SQL_QUERY_2 = '''
         resolved_date, 
         filtro_equipe_2,
         mttr
-    FROM tb_indisponibilidade
-    WHERE EXTRACT(YEAR FROM SUBMIT_DATE) <= 2025;
+    FROM tb_indisponibilidade;
 '''
 PG_SQL_QUERY_3 = '''
     SELECT 
@@ -94,8 +93,7 @@ PG_SQL_QUERY_3 = '''
         submit_date, 
         clear_date, 
         resolved_date
-    FROM tb_alarmes
-    WHERE EXTRACT(YEAR FROM SUBMIT_DATE) <= 2025;
+    FROM tb_alarmes;
 '''
 PG_SQL_QUERY_4 = '''
     WITH horas_ano AS (
